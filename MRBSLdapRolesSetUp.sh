@@ -48,6 +48,7 @@ if(in_array($user['username'], $auth['admin'])){
 }
 
 '
+awk -v new_code="$role_chooser" -v line="$line_where_to_insert" 'NR==line{print new_code} 1' "$file_to_modify" > tmpfile && mv tmpfile "$file_to_modify"
 
 
 # Define the file to modify and the lines to replace
