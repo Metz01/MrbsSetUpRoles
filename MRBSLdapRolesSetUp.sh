@@ -29,7 +29,10 @@ $ldap_user_attrib = "uid";
 # Use the awk command to insert the new code block at the desired position
 awk -v new_code="$ldap_info_setup" -v line="$line_where_to_insert" 'NR==line{print new_code} 1' "$file_to_modify" > tmpfile && mv tmpfile "$file_to_modify"
 
-max_level='$max_level = 3;'
+max_level='
+$max_level = 3;
+$auth['deny_public_access'] = TRUE;
+'
 echo "$max_level" >> "$file_to_modify"
 
 file_to_modify="./lib/MRBS/Auth/AuthLdap.php"
