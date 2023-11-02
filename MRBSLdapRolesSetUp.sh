@@ -36,16 +36,16 @@ $auth['deny_public_access'] = TRUE;
 echo "$max_level" >> "$file_to_modify"
 
 file_to_modify="./lib/MRBS/Auth/AuthLdap.php"
-line_where_to_insert=474
+line_where_to_insert=475
 role_chooser='
-global $auth;
-if(in_array($user['username'], $auth['admin'])){
-    $user['level'] = $max_level;
-}else if(in_array($user['username'], $auth['user'])){
-    $user['level'] = 2;
-}else{
-    $user['level'] = 1;
-}
+    global $auth;
+    if(in_array($user['username'], $auth['admin'])){
+        $user['level'] = $max_level;
+    }else if(in_array($user['username'], $auth['user'])){
+        $user['level'] = 2;
+    }else{
+        $user['level'] = 1;
+    }
 
 '
 awk -v new_code="$role_chooser" -v line="$line_where_to_insert" 'NR==line{print new_code} 1' "$file_to_modify" > tmpfile && mv tmpfile "$file_to_modify"
@@ -54,7 +54,7 @@ awk -v new_code="$role_chooser" -v line="$line_where_to_insert" 'NR==line{print 
 # Define the file to modify and the lines to replace
 file_to_modify="mrbs_auth.inc"
 line_numbers=(71 94 118 139)  # Replace lines 3, 5, and 7
-replacement=('        return 2;' '        $result = 1;' '        $result = $max_level;' '        $result = $max_level;')  # Replacement lines
+replacement=('  return 2;' '        $result = 1;' '        $result = $max_level;' '        $result = $max_level;')  # Replacement lines
 
 # Loop through line numbers and replacements
 for i in "${!line_numbers[@]}"; do
