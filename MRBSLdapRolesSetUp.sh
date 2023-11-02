@@ -53,7 +53,7 @@ if(in_array($user['username'], $auth['admin'])){
 # Define the file to modify and the lines to replace
 file_to_modify="mrbs_auth.inc"
 line_numbers=(71 94 118 139)  # Replace lines 3, 5, and 7
-replacement=('return 2;' '$result = 1;' '$result = $max_level;' '$result = $max_level;')  # Replacement lines
+replacement=('        return 2;' '        $result = 1;' '        $result = $max_level;' '        $result = $max_level;')  # Replacement lines
 
 # Loop through line numbers and replacements
 for i in "${!line_numbers[@]}"; do
