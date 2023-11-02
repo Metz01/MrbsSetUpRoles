@@ -1,8 +1,6 @@
-MRBS Ldap SetUp for LNL
+# MRBS Ldap SetUp for LNL
 
-=================
-
-# Repository Information
+## Repository Information
 
 This repository provides instructions for setting up a machine to host an LN(Layered Network) site. The crucial information for machine setup can be found in the **setUpVM.txt** file, which offers a detailed, step-by-step guide, from the initial installation to configuring it for MRBS (Meeting Room Booking System) use.
 
@@ -29,5 +27,3 @@ To simplify the process of making the required modifications as detailed in **se
 ```
 
 This script streamlines the configuration changes, making it easier to set up MRBS with LDAP integration and role-based access control.
-
-=================
