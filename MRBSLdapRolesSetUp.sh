@@ -1,7 +1,7 @@
 #!/bin/bash
 
 file_to_modify="config.inc.php"
-line_where_to_insert=1
+line_where_to_insert=2
 ldap_info_setup='
 $auth["type"] = "ldap";
 
