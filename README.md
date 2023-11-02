@@ -20,8 +20,9 @@ To simplify the process of making the required modifications as detailed in **se
     * If you just installed MRBS there will be no **config.inc.php** but just **config.inc.php-sample**. Rename it: `mv config.inc.php-sample config.inc.php`
 
 2. Copy the MRBSLdapRoleSetUp.sh file here.
+3. Give it the permissions: `chmod +rx MRBSLdapRoleSetUp.sh`
 
-3. Run the script using the following command:
+4. Run the script using the following command:
 
 ```bash
 ./MRBSLdapRoleSetUp.sh 
