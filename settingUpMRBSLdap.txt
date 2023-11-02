@@ -1,0 +1,151 @@
+//--------------------------------------------
+
+- Nel file config.inc.php che si trova in /var/www/html/ 
+    (che è la cartella dova va copiata la cartella web del codice MRBS per farlo vedere ad apache,
+      se invece non è stato fatto quel passaggio semplicemente lo si trova dentro mrbs-code/web/):
+    - Aggiungere:
+            $auth["type"] = "ldap";
+
+            // 'auth_ldap' configuration settings
+            // Where is the LDAP server
+            $ldap_host = "ldaps://imap.lnl.infn.it";
+            // If you have a non-standard LDAP port, you can define it here
+            $ldap_port = 636;
+            // If you want to use LDAP v3, change the following to true
+            $ldap_v3 = false;
+            // If you want to use TLS, change following to true
+            $ldap_tls = false;
+            // LDAP base distinguish name
+            // See AUTHENTICATION for details of how check against multiple base dn's
+            $ldap_base_dn = "dc=lnl,dc=infn,dc=it";
+            // Attribute within the base dn that contains the username
+            $ldap_user_attrib = "uid";
+
+        All'inizio del file subito dopo <?php .
+    - Per aggiungere utenti come admin oppure come user che possono modificare e creare riunioni:
+            $max_level = 3;
+            $auth["admin"][] = "adminUid";
+            $auth["user"][] = "userUid";
+        Alla fine del file
+    
+
+
+
+
+
+- Nel file AuthLdap.php che si trova in /var/www/html/lib/MRBS/Auth/:
+    - Aggiungere (in riga 479) nella funzione getUserCallBack prima di
+        if(isset($user['groups']))
+    Le seguenti righe:
+        global $auth;
+        if(in_array($user['username'], $auth['admin'])){
+            $user['level'] = $max_level;
+        }else if(in_array($user['username'], $auth['user'])){
+            $user['level'] = 2;
+        }else{
+            $user['level'] = 1;
+        }
+
+- Nel file mrbs_auth.inc che si trova in /var/www/html/:
+    ~ Modificare nella funzione booking_level():
+        - linea 71:
+            Da: return 1;
+            A : return 2;
+    ~ Modificare nella funzione get_page_level():
+        - linea 94:
+            Da: $result = 0;
+            A : $result = 1;
+        - linea 118:
+            Da: $result = 1;
+            A : $result = $max_level;
+        - linea 139:
+            Da: $result = 2;
+            A : $result = $max_level;
+        ||
+        ||
+        \/
+
+        function get_page_level($page)
+        {
+            global $auth, $max_level;
+
+            // If you're resetting your password you won't be logged in and $auth['deny_public_access']
+            // should not apply.
+            if (in_array($page, array('reset_password.php', 'reset_password_handler.php')))
+            {
+                return 0;
+            }
+
+            // Otherwise ...
+            switch ($page)
+            {
+                // These pages are open to the public by default as they only contain
+                // read features.
+                case 'help.php':
+                case 'index.php':
+                $result = 1;
+                break;
+
+                // These pages reveal usernames, which could be of assistance to someone trying to
+                // break into the system, so users are required to be logged in before viewing them.
+                case 'search.php':
+                $result = 1;
+                break;
+
+                case 'view_entry.php':
+                $result = ($auth['allow_anonymous_booking']) ? 0 : 1;
+                break;
+
+                // These pages are set to have a minimum access level of 1 as ordinary users
+                // should be able to access them because they will have read access and in some
+                // cases write access for their own entries.   Where necessary further checks are
+                // made within the page to prevent ordinary users gaining access to admin features.
+                case 'admin.php':
+                case 'approve_entry_handler.php':   // Ordinary users are allowed to remind admins
+                case 'edit_room.php':               // Ordinary users can view room details
+                case 'edit_users.php':              // Ordinary users can edit their own details
+                case 'pending.php':                 // Ordinary users can view their own entries
+                case 'registration_handler.php':    // Ordinary users can register for an event
+                case 'usernames.php':               // Ajax page for getting a list of users (booking admins can use this)
+                $result = $max_level;
+                break;
+
+                // These pages allow users to create and delete entries
+                case 'check_slot.php':              // Ajax page used by edit_entry.php
+                case 'del_entry.php':
+                case 'edit_entry.php':
+                case 'edit_entry_handler.php':
+                return booking_level();
+                break;
+
+                // These pages only contain admin features
+                case 'add.php':                     // Adds a room
+                case 'del.php':                     // Deletes a room
+                case 'del_entries.php':             // Ajax page for bulk deletion of entries
+                case 'edit_area.php':
+                case 'edit_area_handler.php':
+                case 'edit_room_handler.php':
+                case 'import.php':
+                case 'kiosk.php':
+                case 'report.php':
+                $result = $max_level;
+                break;
+
+                default:
+                $result = (isset($max_level)) ? $max_level : 2;
+                break;
+            }
+            if ($auth['deny_public_access'])
+            {
+                $result = max($result, 1);
+            }
+
+            // Can always access index.php when in kiosk mode
+            if ($page == 'index.php' && is_kiosk_mode())
+            {
+                $result = 0;
+            }
+
+            return $result;
+
+        }

@@ -1,0 +1,179 @@
+DOWNLOAD UbuntuLTS from:
+https://ubuntu.com/download/desktop
+
+FOR VM:
+~ New
+    - Type: Linux
+    Version: Ubuntu(64-bit)
+    - Memory size: 4096MB
+    - Create a virtual hard disk now
+    - VDI
+    - Dynamically allocated
+    - File location and size: 50GB 
+~ Start
+    - Ubuntu LTS
+
+~ Select the Iso of Ubuntu you installed
+    
+~ Try install Ubuntu Server
+    - Lenguage: English
+    - Update to new version (Optional)
+    - Keyboard: US
+    - Variant: US
+    - (X) Ubuntu Server
+    - Network: Keep it as it is and click Done
+    - No proxy address
+    - Wait for configure Ubuntu archive mirror (After Fetched nkB is done)
+    - (X) Use entire disk
+        [ ] Set up this disk as an LVM group (<- uncheck this)
+    - Storage configuration: Done
+    - Continue
+
+~ Profile set up
+    -Create a dummy user (You will have to remove it):
+        name: dummy
+        servers name: ubuntu(or wathever you want, is the name that will appear after username@servername)
+        password: (set password for dummy user (dummy))
+    
+    -Ubuntu Pro: skip for now
+    -[X] Install OpenSSH server (but don't import ssh identity)
+    - Do not insatll any snap
+
+- Wait
+- Reboot Now
+- Press Enter (Don't warry about the errors, they are asking you to remove the "installation disk")
+ - Wait for installation to finish
+-Press enter (at [ OK ] Reached target Cloud-init target.)
+
+
+~ login with dummy account:
+    dummy
+    dummy
+
+{ TO USE FROM LOCAL MACHINE CMD
+    ~ From the VM
+        - Devices (on the menu bar on top)
+        - Network
+        - Network Settings
+        - Advanced
+            -PortForwarding
+            - Add Rule (on the right menu)
+                Rule 1 | TCP | 127.0.0.1 | 17000 | 10.0.2.15 | 22
+    ~ From the CMD on the local MACHINE
+        ssh username@localhost -p 17000 (where username is the one you choose)
+    
+}
+
+
+- git clone https://baltig.infn.it/epicscs/linux_setup.git
+- login with AAI password (username in my case was mcamillo)
+- cd linux_setup
+~ sudo ./installme.sh
+    - 2 (choose sti (servizio tecnologie informatiche))
+    - New HostName: ubuntuServer (insert new host name)
+    - Press ENTER whenever "Restarting services..." appear
+    - y/N on install epics (or also No, depends if you need it)
+    - y on insatll docker
+    - y on reboot
+
+- If you are not listed in the repo of linux_setup:
+    - After reboot login with dummy user
+    - cd /etc/sssd/
+    - nano sssd.conf
+    - Add to ldap_access_filter your name after the others (uid=AAIUserName)
+    - reboot
+
+- Login with LNL username and Password 
+
+- sudo apt-get install apache2 (Install apache2)
+- sudo apt-get install php libapache2-mod-php (Install php and php-apache2 modules)
+- sudo apt-get intall mariadb-server  (Install mariadb)
+    - sudo mysql_secure_installation
+        - Unix_socket [Y/n] -> n
+        - change root password -> n
+        - Remove anonymous user -> ENTER (Y)
+        - Dissallow root login remotly -> ENTER(y)
+        - Remove test database and access to it > ENTER (y)
+        - Reload Privilages -> ENTER (Y)
+
+- Create MariaDb DataBase to store data for mrbs:
+    - ~$ sudo mariadb
+    - MariaDB [(none)]> CREATE DATABASE mrbs;
+    - MariaDB [(none)]> GRANT ALL PRIVILEGES ON mrbs.* TO 'mrbs'@'localhost' IDENTIFIED BY 'mrbs';
+                        (Username hostname and password must be between '' and check that you wrote PRIVILEGES and not PRIVILAGES)
+    - MariaDB [(none)]> flush Privileges;
+    - MariaDB [(none)]> \q (to quit)
+
+- Create Shared folder if you need to import old database or old config mrbs:
+    - On the local (real) machine:
+        - Create a folder
+        - r-click -> local Network Share -> share (grant access to the foldrer)
+    - On the VM:
+        - shutdown
+    - From the Oracle VirtualBox Screen:
+        - r-click on the VM desired -> settings -> shared folders
+        - Add the shared folder path of the physical machine
+        - Check auto-mount
+    - Start the Virtual machine:
+        - login
+        - sudo apt-get install virtualbox-guest-utils
+        - sudo adduser $USER vboxsf
+    ~ You should be able to see the shared folder on /media/
+
+- Imoprt the database dump:
+    - From the physical machine:
+        - insert the DB dump in .sql to the shared folder
+    - From the VM:
+        - cd ~/
+        - sudo su (it should enter in root user in the home directory of the lnl user /home/mcamillo, if not, move to there)
+        - cp /media/sf_Db/mrbs_dump.sql ./
+        - ssh mcamillo@ubuntu (mcamillo=username ubuntu=machinename)
+
+- Import the dump into the mrbs database created:
+    - sudo mariadb mrbs < mrbs_dump.sql
+
+- Copy the config file :
+    - From the physical machine:
+        - insert the config.inc.php in to the shared folder
+    - From the VM:
+        - cd ~/
+        - sudo su (it should enter in root user in the home directory of the lnl user /home/mcamillo, if not, move to there)
+        - cp /media/sf_Db/config.inc.php ./
+        - ssh mcamillo@ubuntu (mcamillo=username ubuntu=machinename)
+
+- Install php PDO (let PHP comunicate with the server)
+    - sudo apt-get install php-mysql
+    - cd /etc/php/8.1/apache2/ (8.1or wathever version of php you have installed)
+    - sudo nano php.ini
+    - add the line:
+        - extension=pdo.so
+    -sudo systemctl restart apache2
+
+
+- Install the last version of MRS:
+    - git clone https://github.com/meeting-room-booking-system/mrbs-code.git
+
+- Copy the config file imported to the /mrbs-code/web/ directory:
+    - sudo cp config.inc.php /mrbs-code/web/
+    - sudo chmod +rwx config.inc.php
+    - Now check that the username and password are the same you used for the user of the database
+
+- sudo cp -r mrbs-code/web/ /var/www/html/
+
+- sudo rm /var/www/html/index.html
+
+- Enable the 8080 Port:
+    - From the VM settings go to Network -> Advanced -> PortForwarding
+        - Add Rule (on the right menu)
+                Apache | TCP |      | 8080 |      | 80
+
+
+- From the browser on the physical machine go to localhost:8080:
+    - Enter web folder
+        - Insert username of the database (mrbs)
+        - Insert password of the database (mrbs)
+        - Wait for the update of the database
+
+- For use of LDAP server:
+    - sudo apt-get install php-ldap
+    - in the file /etc/php/8.1/apache2/php.ini uncomment the line extension=ldap (or write it)
