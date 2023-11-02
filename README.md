@@ -17,6 +17,7 @@ For integrating MRBS with LDAP (Lightweight Directory Access Protocol) and makin
 To simplify the process of making the required modifications as detailed in **settingUpMRBSLdap.txt**, we've provided the `MRBSLdapRoleSetUp.sh` script. Here are the steps to execute it:
 
 1. Navigate to the web directory of MRBS (the same directory as **config.inc.php**).
+    * If you just installed MRBS there will be no **config.inc.php** but just **config.inc.php-sample**. Rename it: `mv config.inc.php-sample config.inc.php`
 
 2. Copy the MRBSLdapRoleSetUp.sh file here.
 
