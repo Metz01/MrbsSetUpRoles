@@ -36,20 +36,33 @@ $auth['deny_public_access'] = TRUE;
 echo "$max_level" >> "$file_to_modify"
 
 file_to_modify="./lib/MRBS/Auth/AuthLdap.php"
-line_where_to_insert=475
-role_chooser='
+
+# Define the search string or pattern to identify the line
+search_string="function getUserCallback"
+
+# Define the code you want to insert
+code_to_insert='
     global $auth;
-    if(in_array($user['username'], $auth['admin'])){
-        $user['level'] = $max_level;
-    }else if(in_array($user['username'], $auth['user'])){
-        $user['level'] = 2;
+    if(in_array($user[\'username\'], $auth[\'admin\'])){
+        $user[\'level\'] = $max_level;
+    }else if(in_array($user[\'username\'], $auth[\'user\'])){
+        $user[\'level\'] = 2;
     }else{
-        $user['level'] = 1;
+        $user[\'level\'] = 1;
     }
 
 '
-awk -v new_code="$role_chooser" -v line="$line_where_to_insert" 'NR==line{print new_code} 1' "$file_to_modify" > tmpfile && mv tmpfile "$file_to_modify"
 
+# Use grep to find the line number that matches the search string
+line_number=$(grep -n "$search_string" "$file_to_modify" | cut -d: -f1)
+
+# Check if the search string was found
+if [ -n "$line_number" ]; then
+  # Use sed to insert the code after the identified line
+  sed -i "$((line_number + 1))i$code_to_insert" "$file_to_modify"
+else
+  echo "Search string not found in the file."
+fi
 
 # Define the file to modify and the lines to replace
 file_to_modify="mrbs_auth.inc"
